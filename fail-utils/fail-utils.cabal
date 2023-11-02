@@ -1,0 +1,70 @@
+cabal-version:      3.6
+name:               fail-utils
+version:            0.1.0.0
+synopsis:           Utilities for MonadFail
+-- A longer description of the package.
+-- description:
+homepage:           https://github.com/grmble/error-utils
+-- A URL where users can report bugs.
+-- bug-reports:
+license:            MIT
+license-file:       LICENSE
+author:             Juergen Gmeiner
+maintainer:         spamless.juergen@gmail.com
+
+-- A copyright notice.
+-- copyright:
+-- category:
+extra-source-files: CHANGELOG.md
+
+
+common deps
+    build-depends:
+        -- 4.16.4 is ghc 9.2.x
+        , base ^>=4.16.4.0
+    default-language: GHC2021
+
+common test-deps
+    import: deps
+    build-depends:
+        , network-uri
+        , doctest
+        , hspec
+        , hspec-discover
+        , QuickCheck
+
+common opts
+    ghc-options:
+        -O      
+        -Wall
+        -Wcompat
+        -Wincomplete-record-updates
+        -Wincomplete-uni-patterns
+        -Wredundant-constraints
+
+common exec-opts
+    import: opts
+    ghc-options:      
+        -threaded
+        -rtsopts
+        -with-rtsopts=-N
+        -with-rtsopts=-T
+
+        
+library
+    import:           deps, opts
+    exposed-modules:  Control.Monad.Fail.Utils
+    -- Modules included in this library but not exported.
+    -- other-modules:
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+    hs-source-dirs:   src
+    
+test-suite fail-utils-test
+    import:           deps, test-deps, opts, exec-opts
+    other-modules:    UriExample, Control.Monad.Fail.UtilsSpec
+    build-depends:    fail-utils
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Spec.hs
+    
