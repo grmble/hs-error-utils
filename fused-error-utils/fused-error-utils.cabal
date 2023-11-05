@@ -24,6 +24,7 @@ common deps
         , base ^>=4.16.4.0
         , fail-utils
         , fused-effects
+        , text
     default-language: GHC2021
 
 common test-deps
@@ -54,7 +55,7 @@ common exec-opts
         
 library
     import:           deps, opts
-    exposed-modules:  Control.Carrier.Fail.Utils
+    exposed-modules:  Control.Carrier.Fail.Utils, Control.Carrier.Throw.Utils
     -- Modules included in this library but not exported.
     -- other-modules:
     -- LANGUAGE extensions used by modules in this package.

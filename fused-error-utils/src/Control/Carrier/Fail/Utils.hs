@@ -1,41 +1,32 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE ExplicitNamespaces #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 -- |
--- Description : Combinators for working with MonadFail
+-- Description : Re-interpreting 'Fail' into 'Throw'
 -- Copyright   : Juergen Gmeiner
 -- License     : MIT
 -- Maintainer  : spamless.juergen@gmail.com
 -- Stability   : experimental
 -- Portability : POSIX
 --
--- Fused effect's 'FailC' lets you get at a 'MonadFail' error string
--- from pure code.  Maybe will discard the message, and IO will
--- throw an exception, FailC can give you an Either.
+-- The fail utilites from 'Control.Monad.Fail.Utils' are re-exported
 --
--- As long as you are OK with string errors, this lets
--- you to work with 'MonadFail' instances, 'Maybe' and 'Either'
--- returns at the same time without lots of conditionals.
+-- fused-effects builtin 'Throw' and 'Fail' effects
+-- allow you to extract the error message (the catch effect
+-- is also an option).
 --
--- The alternative is using an 'ExceptT' monad.
--- This lets you work with sum error types, but
--- 'MonadFail' is only defined for the underlying
--- monad.
+-- 'ToThrowC' re-interprets the 'Fail' effect
+-- into an outer 'Throw' effect while transforming
+-- fails error string into the error type of the outer monad.
 --
--- With @fused-effects@ you can just pop into
--- the 'Fail' effect where you need it (or where you
--- want to use these combinators), as soon as that
--- effect is gone you can start mapping the error
--- type.  This is also a good point map into
--- another text type using 'IsString'.
---
--- Most utility functions are just re-exported
--- from 'fail-utils'.  But there also 2
--- functions with a fixed fused effect carrier:
--- 'mkFail' is a typed constructor,
--- 'runPure' applies the effect in a pure context.
--- These 2 helpers are most useful in tests
--- and in the repl.
 module Control.Carrier.Fail.Utils
   ( MonadFail (..),
     FailC (..),
+    ToThrowC (..),
     failEmpty,
     failIf,
     failLeft,
@@ -46,13 +37,36 @@ module Control.Carrier.Fail.Utils
     runPure,
     runFail,
     run,
+    withFail,
   )
 where
 
+import Control.Algebra
+import Control.Applicative (Alternative)
 import Control.Carrier.Error.Either
 import Control.Carrier.Fail.Either
+import Control.Carrier.Reader
+import Control.Monad (MonadPlus)
 import Control.Monad.Fail.Utils
+import Control.Monad.Fix (MonadFix)
+import Control.Monad.IO.Class (MonadIO)
 import Data.Functor.Identity
+
+-- | Re-interprets 'Fail' into 'Throw'
+newtype ToThrowC err m a = ToThrowC {runToThrow :: m a}
+  deriving (Alternative, Applicative, Functor, Monad, MonadFix, MonadIO, MonadPlus)
+
+instance (Has (Throw err) sig m, Has (Reader (String -> err)) sig m) => MonadFail (ToThrowC err m) where
+  fail = send . Fail
+
+instance (Algebra sig m, Has (Throw err) sig m, Has (Reader (String -> err)) sig m) => Algebra (Fail :+: sig) (ToThrowC err m) where
+  alg hdl sig ctx = case sig of
+    L (Fail err) -> (<$ ctx) <$> (ask @(String -> err) >>= \f -> throwError (f err))
+    R other -> ToThrowC (alg (runToThrow . hdl) other ctx)
+
+-- | Change from 'Fail' to 'Throw' while mapping the error type
+withFail :: (String -> err) -> ToThrowC err (ReaderC (String -> err) m) a -> m a
+withFail f = runReader f . runToThrow
 
 -- | Type-Contrained constructor for testing
 --
