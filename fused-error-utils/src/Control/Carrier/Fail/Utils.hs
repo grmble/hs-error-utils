@@ -22,17 +22,17 @@
 -- 'ToThrowC' re-interprets the 'Fail' effect
 -- into an outer 'Throw' effect while transforming
 -- fails error string into the error type of the outer monad.
---
 module Control.Carrier.Fail.Utils
   ( MonadFail (..),
     FailC (..),
     ToThrowC (..),
     failEmpty,
-    failIf,
+    failWhen,
     failLeft,
     failNothing,
     failPred,
     failReadS,
+    failRead,
     mkFail,
     runPure,
     runFail,
@@ -42,6 +42,10 @@ module Control.Carrier.Fail.Utils
 where
 
 import Control.Algebra
+  ( Algebra (..),
+    send,
+    type (:+:) (..),
+  )
 import Control.Applicative (Alternative)
 import Control.Carrier.Error.Either
 import Control.Carrier.Fail.Either

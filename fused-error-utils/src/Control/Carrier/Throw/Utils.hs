@@ -16,11 +16,12 @@ module Control.Carrier.Throw.Utils
     -- ReThrowC (..),
     -- withThrow,
     throwEmpty,
-    throwIf,
+    throwWhen,
     throwLeft,
     throwNothing,
     throwPred,
     throwReadS,
+    throwRead,
     runPure,
     run,
   )
@@ -32,6 +33,7 @@ import Control.Carrier.Throw.Either (ThrowC, runThrow)
 import Control.Monad (when)
 import Data.Functor.Identity
 import Data.Text
+import Text.Read (readMaybe)
 
 -- $setup
 -- >>> import Data.Function ((&))
@@ -46,11 +48,11 @@ throwNothing err = maybe (throwError err) pure
 throwLeft :: (Has (Throw Text) sig m) => Either Text a -> m a
 throwLeft = liftEither
 
-throwIf :: (Has (Throw Text) sig m) => Text -> Bool -> m ()
-throwIf err b = when b (throwError err)
+throwWhen :: (Has (Throw Text) sig m) => Text -> Bool -> m ()
+throwWhen err b = when b (throwError err)
 
-throwPred :: (Has (Throw Text) sig m) => Text -> (a -> Bool) -> a -> m ()
-throwPred err f = throwIf err . f
+throwPred :: (Has (Throw Text) sig m) => Text -> (a -> Bool) -> a -> m a
+throwPred err f a = if f a then throwError err else pure a
 
 throwEmpty :: (Has (Throw Text) sig m) => Text -> [a] -> m [a]
 throwEmpty err [] = throwError err
@@ -60,6 +62,9 @@ throwReadS :: (Has (Throw Text) sig m) => Text -> [(a, String)] -> m a
 throwReadS _ [(a, "")] = pure a
 throwReadS _ ((a, "") : _) = pure a
 throwReadS err _ = throwError err
+
+throwRead :: (Has (Throw Text) sig m, Read a) => Text -> String -> m a
+throwRead err s = throwNothing err (readMaybe s)
 
 {--
 

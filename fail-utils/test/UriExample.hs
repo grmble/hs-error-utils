@@ -11,7 +11,7 @@ import Text.ParserCombinators.ReadP
 parsePostgresURI :: (MonadFail m) => String -> m (String, String, String, Word16, String)
 parsePostgresURI uristr = do
   uri <- parseURI uristr & failNothing ("parseURI: can not parse: " <> uristr)
-  failIf ("scheme must be postgresql: " <> uristr) (uriScheme uri /= "postgresql:")
+  failWhen ("scheme must be postgresql: " <> uristr) (uriScheme uri /= "postgresql:")
   auth <- failNothing ("no authority (=hostname, username, password, port): " <> uristr) (uriAuthority uri)
   (user, pass) <- failReadS ("can not parse user/password: " <> uristr) (readP_to_S parseUserInfo (uriUserInfo auth))
   port <-

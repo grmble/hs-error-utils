@@ -1,10 +1,10 @@
 cabal-version:      3.6
 name:               fused-error-utils
-version:            0.1.0.0
+version:            0.0.1.0
 synopsis:           Utilities for error handling in fused-effects
 -- A longer description of the package.
 -- description:
-homepage:           https://github.com/grmble/error-utils
+homepage:           https://github.com/grmble/hs-error-utils
 -- A URL where users can report bugs.
 -- bug-reports:
 license:            MIT

@@ -38,6 +38,7 @@
 module Control.Monad.Fail.Utils where
 
 import Control.Monad (when)
+import Text.Read (readMaybe)
 
 -- | Lift an 'Either' into 'MonadIO'
 --
@@ -80,12 +81,12 @@ failNothing err = maybe (fail err) pure
 --
 -- The boolean does not carry a useful value, so we map 'True'
 -- to the unit typee.
-failIf :: (MonadFail m) => String -> Bool -> m ()
-failIf err b = when b (fail err)
+failWhen :: (MonadFail m) => String -> Bool -> m ()
+failWhen err b = when b (fail err)
 
 -- | Lift a predicate and value into 'MonadFail'
-failPred :: (MonadFail m) => String -> (a -> Bool) -> a -> m ()
-failPred err f a = when (f a) (fail err)
+failPred :: (MonadFail m) => String -> (a -> Bool) -> a -> m a
+failPred err f a = if f a then fail err else pure a
 
 -- | Lift a list into 'MonadFail'
 --
@@ -102,3 +103,11 @@ failReadS :: (MonadFail m) => String -> [(a, String)] -> m a
 failReadS _ [(a, "")] = pure a
 failReadS _ ((a, "") : _) = pure a
 failReadS err _ = fail err
+
+-- | Lift the result of a 'read'
+--
+-- Read does not really give good error messages
+-- ("Prelude.read: no parse"), so we use 'readMaybe'
+-- and use our own error.
+failRead :: (MonadFail m, Read a) => String -> String -> m a
+failRead err = failNothing err . readMaybe
